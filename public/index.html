@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="public/output.css">
+  <!-- Include Tailwind CSS from a CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.15/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    /* Custom styles that Tailwind doesn't provide */
+    .top-content {
+      position: absolute;
+      top: 0;
+      width: 100%;
+      z-index: 10;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      max-height: 10%; /* Set a maximum height for the top div */
+    }
+
+    .left-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: auto;
+      height: 180px;
+    }
+    .right-image {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: auto;
+      height: 180px;
+    }
+    /* Style for the footer */
+    .footer {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background-color: #333; /* Dark background color for the footer */
+      color: white;
+      text-align: center;
+      padding: 10px;
+    }
+  </style>
+  <title>Escaner de Red - Oswaldo Cisneros</title>
+</head>
+<body class="bg-blue-500 min-h-screen flex flex-col justify-center items-center">
+  <div class="top-content">
+    <div class="bg-white p-4 rounded-lg shadow-md text-center">
+      <img src="Logo-TecNM.png" alt="Left Image" class="left-image">
+      <h1 class="text-3xl">Escaner de Red - Oswaldo Cisneros</h1>
+      <button id="scanButton" class="bg-blue-500 text-white px-4 py-2 my-6 rounded-lg">Escanear redes</button>
+      
+      <img src="logo-ensenada.png" alt="Right Image" class="right-image">
+    </div>
+  </div>
+
+  <div class="h-48 max-h-48">
+    <div class="bg-white p-4 rounded-lg shadow-md text-center h-[90%] max-h-96 overflow-y-auto">
+      <div id="results"></div>
+    </div>
+  </div>
+
+    <!-- Footer section -->
+    <footer class="footer bg-white">
+      <img src="Logo-TecNM.png" alt="Left Image" class="left-image">
+      <img src="logo-ensenada.png" alt="Right Image" class="right-image">
+    </footer>
+  
+  <script>
+    const scanButton = document.getElementById('scanButton');
+    const resultsDiv = document.getElementById('results');
+    let previousResults = {};
+    let scanning = false;
+    let scanningInterval;
+
+    scanButton.addEventListener('click', () => {
+      if (!scanning) {
+        scanning = true;
+        resultsDiv.innerHTML = 'Escaneando..';
+        performScan();
+
+        // Intervalo de escaneo, en este caso puse 17 segundos
+        scanningInterval = setInterval(performScan, 17200);
+      }
+    });
+
+    function performScan() {
+      fetch('/ping', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          resultsDiv.innerHTML = ''; // Esto se encarga de refrescar los resultados anteriores
+
+          data.forEach((result) => {
+            const { device, status } = result;
+
+            const textColorClass = status === 'alive' ? 'text-green-500' : 'text-red-500';
+
+            if (status === 'alive' || (previousResults[device] && previousResults[device] === 'alive')) {
+              const resultMessage = `Dispositivo ${device} está <span class="${textColorClass} text-xl my-2">${status === 'alive' ? 'conectado' : 'desconectado'}</span>`;
+              const resultElement = document.createElement('p');
+              resultElement.innerHTML = resultMessage;
+              resultsDiv.appendChild(resultElement);
+            }
+
+            previousResults[device] = status;
+          });
+
+          if (resultsDiv.children.length === 0) {
+            resultsDiv.textContent = 'No se detectaron dispositivos en la red.';
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+          resultsDiv.textContent = 'Error mientras se escaneaba.';
+        });
+    }
+  </script>
+</body>
+</html>

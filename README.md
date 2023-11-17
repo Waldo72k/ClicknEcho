@@ -1,0 +1,3 @@
+instale
+
+npm install ping
